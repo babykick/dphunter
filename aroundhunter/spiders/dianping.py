@@ -5,15 +5,14 @@ import urlparse
 from aroundhunter.items import DianpingItem
 import re
 
-
-
-
+ 
 class SpiderUtilsMixin(object):
     def extract_first_or_None(self, selector):
         return selector.extract_first().strip() if selector else None
     
      
-class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
+     
+class DianpingSpider(scrapy.Spider, SpiderUtilsMixin):
     name = "dianping"
     allowed_domains = ["dianping.com"]
     categories = {
@@ -93,9 +92,9 @@ class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
         item['phone']  = self.extract_first_or_None(response.xpath('//p[contains(@class, "tel")]/span[@class="item"]/text()')) 
         item['city'] = self.extract_first_or_None(response.css('.city').xpath('./text()'))
         # 从面包削获取类别
-        a = response.css('.breadcrumb').xpath('./a')[-1] #最后一个
+        a = response.css('.breadcrumb').xpath('.//a')[-1] #最后一个
         catecode = self.get_cate_code(a.xpath('@href').extract_first())
-        catename = a.xpath('text()').extract_first().strip()
+        catename = a.xpath('.//text()').extract_first().strip()
         item['category'] = self.infer_full_cate_name(catecode, catename)
         # 推荐项
         recommends = []
@@ -136,6 +135,8 @@ class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
         yield item
         
     def parse_specials(self, response):
+        """ 团购
+        """
         self.log("parse specials")
         
     
