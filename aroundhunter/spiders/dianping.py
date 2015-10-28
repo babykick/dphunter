@@ -13,7 +13,7 @@ class SpiderUtilsMixin(object):
      
      
 class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
-    name = "dianping"
+    name = "dianping_rankboard"
     allowed_domains = ["dianping.com"]
     categories = {
         '25': '电影院',
