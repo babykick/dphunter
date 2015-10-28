@@ -16,6 +16,10 @@ class SpiderUtilsMixin(object):
 class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
     name = "dianping"
     allowed_domains = ["dianping.com"]
+    categories = {
+        '25': '电影院',
+        '10': '美食',
+    }
     # start_urls = (
     #     'http://www.dianping.com/mylist/yueyang',
     # )
@@ -84,8 +88,15 @@ class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
         item['coord'] = response.xpath("//script").re("lng:(.*?),lat:(.*?)}")
         item['region'] = self.extract_first_or_None(response.xpath('//div[contains(@class, "address")]/a/span/text()'))
         item['address'] = self.extract_first_or_None(response.xpath('//div[contains(@class, "address")]/span[@class="item"]/text()'))
+        # item['category'] = self.extract_first_or_None(response.css('.address').xpath('./a/@href'))
+        # if item['category']: item['category'] = item['category'].split("category")[-1]
         item['phone']  = self.extract_first_or_None(response.xpath('//p[contains(@class, "tel")]/span[@class="item"]/text()')) 
-        
+        item['city'] = self.extract_first_or_None(response.css('.city').xpath('./text()'))
+        # 从面包削获取类别
+        a = response.css('.breadcrumb').xpath('./a')[-1] #最后一个
+        catecode = self.get_cate_code(a.xpath('@href').extract_first())
+        catename = a.xpath('text()').extract_first().strip()
+        item['category'] = self.infer_full_cate_name(catecode, catename)
         # 推荐项
         recommends = []
         text = re.search('<p class="recommend-name">.*?</p>', response.body_as_unicode(), re.DOTALL)
@@ -127,3 +138,19 @@ class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
     def parse_specials(self, response):
         self.log("parse specials")
         
+    
+    
+    def get_cate_code(self, url):
+        """ return (主类别号, 子类别号)
+        """
+        category = url.split('category')[1].split('r')[0].split('/')[2:]
+        return category        
+        
+    def infer_full_cate_name(self, catecode, catename):
+         """ 大众点评网站'美食'大类别号为10, 但包含了酒吧, 我们用子类别号码排除酒吧
+         """
+         food_code_exclude = ('g133', )
+         if catecode[0] == '10' and catecode[1] not in food_code_exclude:
+              return u'美食'
+         return catename
+    

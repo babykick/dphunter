@@ -25,7 +25,9 @@ class DianpingItem(scrapy.Item):
     reason = scrapy.Field()
     star = scrapy.Field()
     comments = scrapy.Field()
-    
+    category = scrapy.Field()
+    city = scrapy.Field()
+    breadcrumb = scrapy.Field()
   
 
  
