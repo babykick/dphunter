@@ -12,7 +12,7 @@ class SpiderUtilsMixin(object):
     
      
      
-class DianpingSpider(scrapy.Spider, SpiderUtilsMixin):
+class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
     name = "dianping"
     allowed_domains = ["dianping.com"]
     categories = {
@@ -24,20 +24,21 @@ class DianpingSpider(scrapy.Spider, SpiderUtilsMixin):
     # )
     root_domain = "http://www.dianping.com/"
     
-    def __init__(self, topage=None, *args, **kwargs):
-        self.topage = topage
-        super(DianpingSpiderSpider, self).__init__(*args, **kwargs) 
-         
-    def start_requests(self, city="yueyang"):
+    def __init__(self, city, topage=None, *args, **kwargs):
         self.city = city
-        url = 'http://www.dianping.com/mylist/%s' % city
-        r = Request(url=url,
+        self.topage = topage
+        super(DianpingSpiderSpider, self).__init__(*args, **kwargs)
+         
+         
+    def start_requests(self):
+        url = 'http://www.dianping.com/mylist/%s' % self.city
+        yield Request(url=url,
                     # cookies={'JSESSIONID': '02752BCB5C11756EBEB6EB63BF95233E',
                     #                   'PHOENIX_ID': '0a03052a-1507fbe0a52-124ab',
                     #                  # '_hc.v', "\"9dc4f8fe-83aa-4ab2-a7e7-10d225cf471e.1437123244\"",
                     #                   },
                     callback=self.parse)
-        yield r
+        
     
     
     def parse(self, response):
@@ -63,8 +64,21 @@ class DianpingSpider(scrapy.Spider, SpiderUtilsMixin):
                                                                             'title': title,
                                                                             'intro': intro
                                                                             }})
-
+    
+    
     def parse_board(self, response):
+        #首页
+        self.parse_board_page(response)
+        pagelinks = response.css('.Pages').xpath("./a").xpath('@href').extract()[:-1]
+        if len(pagelinks) > 1:
+            pagenum = int(pagelinks[-1].split('=')[-1]) 
+            #其他页
+            for i in range(2, pagenum + 1, 1):
+                url = response.url + '?pg=%s' % i
+                yield Request(url=url, callback=self.parse_board_page, meta=response.meta)
+            
+     
+    def parse_board_page(self, response):
         self.log("parse board")
         board = response.meta['board']
         for li in response.xpath(".//div[@class='mc-list']/ul/li"):
@@ -78,8 +92,7 @@ class DianpingSpider(scrapy.Spider, SpiderUtilsMixin):
             item['reason'] = self.extract_first_or_None(li.xpath('.//div[@class="txt-more"]/span/text()'))
             item['star'] = li.css('.item-rank-rst').xpath('@title').extract_first()
             yield Request(url=item['url'], callback=self.parse_detail, meta={'item': item})
-        
-        
+      
         
     def parse_detail(self, response):
         self.log("parse item detail")
