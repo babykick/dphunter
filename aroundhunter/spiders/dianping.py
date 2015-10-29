@@ -20,11 +20,11 @@ class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
         '10': '美食',
     }
     # start_urls = (
-    #     'http://www.dianping.com/mylist/yueyang',
+    #     'http://www.dianping.com/',
     # )
     root_domain = "http://www.dianping.com/"
     
-    def __init__(self, city, topage=None, *args, **kwargs):
+    def __init__(self, city=None, topage=None, *args, **kwargs):
         self.city = city
         self.topage = topage
         super(DianpingSpiderSpider, self).__init__(*args, **kwargs)
@@ -151,20 +151,27 @@ class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
         """ 团购
         """
         self.log("parse specials")
+        from scrapy.shell import inspect_response
+        inspect_response(response, self)
         
     
     
     def get_cate_code(self, url):
         """ return (主类别号, 子类别号)
         """
-        category = url.split('category')[1].split('r')[0].split('/')[2:]
+        if 'category' in url:
+            category = url.split('category')[1].split('r')[0].split('/')[2:]
+        else:
+            category = url.split('/')[-2:]
         return category        
+        
         
     def infer_full_cate_name(self, catecode, catename):
          """ 大众点评网站'美食'大类别号为10, 但包含了酒吧, 我们用子类别号码排除酒吧
          """
          food_code_exclude = ('g133', )
          if catecode[0] == '10' and catecode[1] not in food_code_exclude:
-              return u'美食'
+             return u'美食'
+         
          return catename
     
