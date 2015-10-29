@@ -4,7 +4,7 @@ from scrapy import Request
 import urlparse
 from aroundhunter.items import DianpingItem
 import re
-
+from scrapy.shell import inspect_response
  
 class SpiderUtilsMixin(object):
     def extract_first_or_None(self, selector):
@@ -42,6 +42,7 @@ class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
     
     
     def parse(self, response):
+        #inspect_response(response, self)
         self.log("parse how many pages")
         if self.topage is None:
             last_page = response.xpath("//div/div[contains(@class, 'Pages')]/a[position()=(last()-1)]/text()").extract_first()
@@ -55,6 +56,7 @@ class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
             
     def parse_board_list(self, response):
         self.log("parse board list from %s" % response.url)
+        inspect_response(response, self)
         for dt in response.xpath("//div/dl[contains(@class, 'perList')]"):
            link = dt.xpath("./dt/span/a/@href").extract_first()
            title = dt.xpath("./dt/span/a/img/@title").extract_first()
@@ -151,9 +153,7 @@ class DianpingSpiderSpider(scrapy.Spider, SpiderUtilsMixin):
         """ 团购
         """
         self.log("parse specials")
-        from scrapy.shell import inspect_response
-        inspect_response(response, self)
-        
+      
     
     
     def get_cate_code(self, url):
